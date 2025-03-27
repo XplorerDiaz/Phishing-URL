@@ -1,0 +1,4 @@
+pytorch
+flask
+tldextract
+nltk

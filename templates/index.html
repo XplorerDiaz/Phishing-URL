@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feature Classification</title>
+    <script>
+        async function predict() {
+            let inputUrl = document.getElementById("input").value; // Keep as string
+            
+            let response = await fetch("/predict", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ input_data: inputUrl })  // Send as string
+            });
+    
+            let result = await response.json();
+            document.getElementById("result").innerText = result.error ? "Error: " + result.error : "Prediction: " + result.prediction;
+        }
+    </script>
+    
+</head>
+<body>
+    <h1>Feature Classification App</h1>
+    <p>Enter feature values separated by commas:</p>
+    <input type="text" id="input" placeholder="Enter values">
+    <button onclick="predict()">Predict</button>
+    <h2 id="result"></h2>
+</body>
+</html>
