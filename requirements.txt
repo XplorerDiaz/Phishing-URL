@@ -1,5 +1,6 @@
 torch==2.2.2
 flask
+numpy
 tldextract
 nltk
 gunicorn
