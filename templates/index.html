@@ -1,30 +1,138 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Feature Classification</title>
-    <script>
-        async function predict() {
-            let inputUrl = document.getElementById("input").value; // Keep as string
-            
-            let response = await fetch("/predict", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ input_data: inputUrl })  // Send as string
-            });
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Information Assurance and Security (IT352) Project</title>
+  <style>
+    body {
+      background-color: #e8f0fe;
+      text-align: center;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      padding: 20px;
+      margin: 0 auto;
+      max-width: 800px;
+    }
+    .title {
+      font-weight: bold;
+      font-size: 24px;
+      color: #2a3f54;
+    }
+    .subtitle {
+      font-size: 20px;
+      margin-top: 10px;
+      color: #3e5367;
+    }
+    .button {
+      display: block;
+      width: 300px;
+      padding: 12px;
+      margin: 15px auto;
+      background-color: #4a90e2;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-size: 18px;
+      border-radius: 4px;
+      transition: background-color 0.3s ease;
+    }
+    .button:hover {
+      background-color: #357ABD;
+    }
+    /* Highlighted result area hidden by default */
+    #result {
+      display: none;
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #fff3cd;
+      border: 2px solid #ffeeba;
+      border-radius: 4px;
+      color: #856404;
+      font-size: 20px;
+      white-space: pre-line;
+    }
+  </style>
+  <script>
+    // Global variables to hold the input URL and prediction value
+    let inputUrl = "";
+    let predictionVal = "";
     
-            let result = await response.json();
-            document.getElementById("result").innerText = result.error ? "Error: " + result.error : "Prediction: " + result.prediction;
-        }
-    </script>
+    async function enterInput() {
+      let inputData = prompt("Enter feature values separated by commas:");
+      if (inputData) {
+        inputUrl = inputData;  // Store the raw input globally
+        let resultDiv = document.getElementById("result");
+        resultDiv.style.display = "block"; // Reveal the result box
+        // Display the input in the result element
+        resultDiv.innerText = "Input URL: " + inputUrl;
+      }
+    }
     
+    async function displayOutput() {
+      // Use the global inputUrl variable as the input
+      let response = await fetch("/predict", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ input_data: inputUrl })
+      });
+      
+      let result = await response.json();
+      // Save the prediction globally
+      predictionVal = result.error ? "" : result.prediction;
+      
+      // Check the prediction value and convert it to text accordingly
+      let predictionText = "";
+      if (result.error) {
+        predictionText = "Error: " + result.error;
+      } else {
+        predictionText = (predictionVal == "1" || predictionVal == 1) ? "benign" : "Phishing";
+      }
+      
+      let resultDiv = document.getElementById("result");
+      resultDiv.style.display = "block"; // Ensure the result box is visible
+      // Display both the input URL and the prediction in the highlighted box
+      resultDiv.innerText = "Input URL: " + inputUrl + "\nPrediction: " + predictionText;
+    }
+    
+    function storeOutput() {
+      // Get the content from the result element
+      let outputContent = document.getElementById("result").innerText;
+      
+      // Create a Blob with the output content
+      let blob = new Blob([outputContent], { type: "text/plain" });
+      
+      // Create a download link for the Blob
+      let downloadLink = document.createElement("a");
+      downloadLink.href = window.URL.createObjectURL(blob);
+      downloadLink.download = "output.txt";
+      
+      // Append the link, trigger click, and then remove it
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+    }
+  </script>
 </head>
 <body>
-    <h1>Feature Classification App</h1>
-    <p>Enter feature values separated by commas:</p>
-    <input type="text" id="input" placeholder="Enter values">
-    <button onclick="predict()">Predict</button>
-    <h2 id="result"></h2>
+  <div class="container">
+    <h2 class="title">DEPARTMENT OF INFORMATION TECHNOLOGY</h2>
+    <h3 class="subtitle">NATIONAL INSTITUTE OF TECHNOLOGY KARNATAKA, SURATHKAL-575025</h3>
+    <h4>Information Assurance and Security (IT352) Course Project</h4>
+    <h4>"Phishing Website Detection Using Deep Learning Models"</h4>
+    <p>
+      <strong>Carried out by</strong><br />
+      M Uzzwal Vanshik Reddy (221IT043)<br />
+      P Charan K Rathod (221IT048)<br />
+      <strong>During Academic Session January – April 2025</strong>
+    </p>
+    <button class="button" onclick="enterInput()">Press here to Enter Input</button>
+    <button class="button" onclick="displayOutput()">Press here to display output on Screen</button>
+    <button class="button" onclick="storeOutput()">Press here to store the output</button>
+    <div id="result"></div>
+  </div>
 </body>
 </html>
