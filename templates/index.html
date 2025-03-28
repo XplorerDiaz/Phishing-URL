@@ -1,138 +1,438 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Information Assurance and Security (IT352) Project</title>
+  <title>URL / CSV Prediction</title>
   <style>
+    /* Page styling */
     body {
-      background-color: #e8f0fe;
-      text-align: center;
       font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
+      margin: 30px;
+      background-color: #f9f9f9;
+      padding-bottom: 180px; /* space for fixed buttons */
     }
-    .container {
+
+    /* Header and project info styling */
+    .header-section {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .header-section h2, .header-section h3 {
+      margin: 5px 0;
+    }
+    .project-info {
+      text-align: center;
+      margin-bottom: 30px;
+      line-height: 1.6;
+    }
+
+    /* Input section styling */
+    #inputSection {
+      margin-bottom: 20px;
       padding: 20px;
-      margin: 0 auto;
-      max-width: 800px;
+      background-color: #fff;
+      border: 1px solid #ccc;
     }
-    .title {
-      font-weight: bold;
-      font-size: 24px;
-      color: #2a3f54;
+    .input-section {
+      margin-bottom: 20px;
     }
-    .subtitle {
-      font-size: 20px;
-      margin-top: 10px;
-      color: #3e5367;
-    }
-    .button {
-      display: block;
-      width: 300px;
-      padding: 12px;
-      margin: 15px auto;
-      background-color: #4a90e2;
-      color: white;
-      border: none;
-      cursor: pointer;
-      font-size: 18px;
-      border-radius: 4px;
-      transition: background-color 0.3s ease;
-    }
-    .button:hover {
-      background-color: #357ABD;
-    }
-    /* Highlighted result area hidden by default */
-    #result {
+    .hidden {
       display: none;
+    }
+    .error {
+      color: red;
+      font-size: 14px;
+      margin-top: 5px;
+    }
+
+    /* Loading spinner styling */
+    #loadingSpinner {
+      display: none;
+      border: 4px solid #f3f3f3;
+      border-radius: 50%;
+      border-top: 4px solid #3498db;
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+      margin: 10px auto;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Table styling */
+    table, th, td {
+      border: 1px solid #ccc;
+      border-collapse: collapse;
+      padding: 8px;
+    }
+    thead {
+      background-color: #f0f0f0;
+    }
+    #resultsTable {
       margin-top: 20px;
-      padding: 15px;
-      background-color: #fff3cd;
-      border: 2px solid #ffeeba;
+      width: calc(100% - 300px);  /* reduced width to avoid overlap */
+      margin-right: 220px;        /* leave space for fixed buttons */
+    }
+
+    /* Fixed button container styling */
+    .button-container {
+      position: fixed;
+      right: 30px;
+      bottom: 80px; /* positioned above the very bottom of the page */
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .blue-button {
+      background-color: #1e73be;
+      color: #fff;
+      border: none;
+      padding: 10px 15px;
+      font-size: 14px;
+      cursor: pointer;
       border-radius: 4px;
-      color: #856404;
-      font-size: 20px;
-      white-space: pre-line;
+      text-align: center;
+    }
+    .blue-button:hover {
+      background-color: #13548c;
+    }
+
+    /* Results container */
+    #resultsContainer {
+      margin-top: 20px;
     }
   </style>
-  <script>
-    // Global variables to hold the input URL and prediction value
-    let inputUrl = "";
-    let predictionVal = "";
-    
-    async function enterInput() {
-      let inputData = prompt("Enter feature values separated by commas:");
-      if (inputData) {
-        inputUrl = inputData;  // Store the raw input globally
-        let resultDiv = document.getElementById("result");
-        resultDiv.style.display = "block"; // Reveal the result box
-        // Display the input in the result element
-        resultDiv.innerText = "Input URL: " + inputUrl;
-      }
-    }
-    
-    async function displayOutput() {
-      // Use the global inputUrl variable as the input
-      let response = await fetch("/predict", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ input_data: inputUrl })
-      });
-      
-      let result = await response.json();
-      // Save the prediction globally
-      predictionVal = result.error ? "" : result.prediction;
-      
-      // Check the prediction value and convert it to text accordingly
-      let predictionText = "";
-      if (result.error) {
-        predictionText = "Error: " + result.error;
-      } else {
-        predictionText = (predictionVal == "1" || predictionVal == 1) ? "benign" : "Phishing";
-      }
-      
-      let resultDiv = document.getElementById("result");
-      resultDiv.style.display = "block"; // Ensure the result box is visible
-      // Display both the input URL and the prediction in the highlighted box
-      resultDiv.innerText = "Input URL: " + inputUrl + "\nPrediction: " + predictionText;
-    }
-    
-    function storeOutput() {
-      // Get the content from the result element
-      let outputContent = document.getElementById("result").innerText;
-      
-      // Create a Blob with the output content
-      let blob = new Blob([outputContent], { type: "text/plain" });
-      
-      // Create a download link for the Blob
-      let downloadLink = document.createElement("a");
-      downloadLink.href = window.URL.createObjectURL(blob);
-      downloadLink.download = "output.txt";
-      
-      // Append the link, trigger click, and then remove it
-      document.body.appendChild(downloadLink);
-      downloadLink.click();
-      document.body.removeChild(downloadLink);
-    }
-  </script>
 </head>
 <body>
-  <div class="container">
-    <h2 class="title">DEPARTMENT OF INFORMATION TECHNOLOGY</h2>
-    <h3 class="subtitle">NATIONAL INSTITUTE OF TECHNOLOGY KARNATAKA, SURATHKAL-575025</h3>
-    <h4>Information Assurance and Security (IT352) Course Project</h4>
-    <h4>"Phishing Website Detection Using Deep Learning Models"</h4>
+
+  <!-- Header Section -->
+  <div class="header-section">
+   <h2>DEPARTMENT OF INFORMATION TECHNOLOGY</h2> 
+    <h3>NATIONAL INSTITUTE OF TECHNOLOGY KARNATAKA, SURATHKAL-575025</h3>
+  </div>
+
+  <!-- Project/Course Info -->
+  <div class="project-info">
     <p>
-      <strong>Carried out by</strong><br />
-      M Uzzwal Vanshik Reddy (221IT043)<br />
-      P Charan K Rathod (221IT048)<br />
+      <strong>Information Assurance and Security (IT352) Course Project</strong><br />
+      <strong>Title “Multi-Layer Feature Fusion with Autoencoders for Phishing URL Classification”</strong>
+    </p>
+    <p>
+    <strong>Carried out by</strong> <br />
+  <strong>M Uzzwal Vanshik Reddy (221IT043)</strong> <br />
+<strong> P Charan Rathod (221IT048)</strong> <br />
       <strong>During Academic Session January – April 2025</strong>
     </p>
-    <button class="button" onclick="enterInput()">Press here to Enter Input</button>
-    <button class="button" onclick="displayOutput()">Press here to display output on Screen</button>
-    <button class="button" onclick="storeOutput()">Press here to store the output</button>
-    <div id="result"></div>
   </div>
+
+  <!-- Input Section (hidden by default) -->
+  <div id="inputSection" class="hidden">
+    <div class="input-section">
+      <label>
+        <input type="radio" name="inputType" value="url" checked />
+        URL Input
+      </label>
+      <label>
+        <input type="radio" name="inputType" value="csv" />
+        CSV/Text File
+      </label>
+    </div>
+    <div id="urlInputDiv" class="input-section">
+      <label for="urlInput">Enter URL:</label>
+      <input type="text" id="urlInput" placeholder="https://www.google.com" size="50" />
+      <div id="urlError" class="error hidden">
+        Invalid URL format. Please enter a URL in the format: https://www.example.com
+      </div>
+    </div>
+    <div id="csvInputDiv" class="input-section hidden">
+      <label for="csvFile">Upload CSV or Text file:</label>
+      <input type="file" id="csvFile" accept=".csv, .txt" />
+    </div>
+    <div id="loadingSpinner"></div>
+  </div>
+
+  <!-- Fixed Button Container -->
+  <div class="button-container">
+    <button id="enterInputBtn" class="blue-button">Press here to Enter Input</button>
+    <button id="displayResultsBtn" class="blue-button">Press here to display output on Screen</button>
+    <button id="downloadCsvBtn" class="blue-button">Press here to store output</button>
+  </div>
+
+  <!-- Results Container -->
+  <div id="resultsContainer" class="hidden">
+    <table id="resultsTable">
+      <thead>
+        <tr>
+          <th>URL</th>
+          <th>Prediction</th>
+          <th>Confidence (%)</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script>
+    // DOM element references
+    const radioButtons = document.getElementsByName('inputType');
+    const inputSection = document.getElementById('inputSection');
+    const urlInputDiv = document.getElementById('urlInputDiv');
+    const csvInputDiv = document.getElementById('csvInputDiv');
+    const urlInput = document.getElementById('urlInput');
+    const csvFile = document.getElementById('csvFile');
+    const displayResultsBtn = document.getElementById('displayResultsBtn');
+    const downloadCsvBtn = document.getElementById('downloadCsvBtn');
+    const resultsTable = document.getElementById('resultsTable');
+    const resultsTableBody = resultsTable.querySelector('tbody');
+    const resultsContainer = document.getElementById('resultsContainer');
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    const urlError = document.getElementById('urlError');
+    const enterInputBtn = document.getElementById('enterInputBtn');
+
+    // Array to hold results: [{ url, prediction, confidence }, ...]
+    let resultsData = [];
+
+    // Show input section when "Enter Input" is clicked.
+    enterInputBtn.addEventListener('click', () => {
+      inputSection.classList.remove('hidden');
+    });
+
+    // Real-time URL validation.
+    urlInput.addEventListener('input', () => {
+      const value = urlInput.value.trim();
+      if (value === "") {
+        urlError.classList.add('hidden');
+        return;
+      }
+      if (value.startsWith("http://") || value.startsWith("https://")) {
+        urlError.classList.add('hidden');
+      } else {
+        if ("http://".indexOf(value) === 0 || "https://".indexOf(value) === 0) {
+          urlError.classList.add('hidden');
+        } else {
+          urlError.classList.remove('hidden');
+        }
+      }
+    });
+
+    // Toggle input fields based on radio button selection.
+    radioButtons.forEach(radio => {
+      radio.addEventListener('change', () => {
+        if (radio.value === 'url' && radio.checked) {
+          urlInputDiv.classList.remove('hidden');
+          csvInputDiv.classList.add('hidden');
+        } else if (radio.value === 'csv' && radio.checked) {
+          urlInputDiv.classList.add('hidden');
+          csvInputDiv.classList.remove('hidden');
+        }
+      });
+    });
+
+    // Automatically add "www." if missing.
+    function addWWWIfMissing(url) {
+      if (url.startsWith("http://") && !url.startsWith("http://www.")) {
+        return "http://www." + url.slice("http://".length);
+      } else if (url.startsWith("https://") && !url.startsWith("https://www.")) {
+        return "https://www." + url.slice("https://".length);
+      }
+      return url;
+    }
+
+    // Validate URL using the URL constructor.
+    function isValidUrl(url) {
+      try {
+        new URL(url);
+        return true;
+      } catch (_) {
+        return false;
+      }
+    }
+
+    // Display results in table.
+    // If more than 5 entries, show first 3, vertical ellipsis row, and last entry.
+    function displayResultsInTable(data) {
+      resultsTableBody.innerHTML = '';
+      if (data.length <= 5) {
+        data.forEach(item => {
+          const row = document.createElement('tr');
+          const urlCell = document.createElement('td');
+          const predictionCell = document.createElement('td');
+          const confidenceCell = document.createElement('td');
+          urlCell.textContent = item.url;
+          predictionCell.textContent = item.prediction === 0 ? 'Phishing'
+            : item.prediction === 1 ? 'Benign'
+            : item.prediction;
+          confidenceCell.textContent = item.confidence !== undefined ? item.confidence + '%' : '';
+          row.appendChild(urlCell);
+          row.appendChild(predictionCell);
+          row.appendChild(confidenceCell);
+          resultsTableBody.appendChild(row);
+        });
+      } else {
+        // First three entries.
+        for (let i = 0; i < 3; i++) {
+          const item = data[i];
+          const row = document.createElement('tr');
+          const urlCell = document.createElement('td');
+          const predictionCell = document.createElement('td');
+          const confidenceCell = document.createElement('td');
+          urlCell.textContent = item.url;
+          predictionCell.textContent = item.prediction === 0 ? 'Phishing'
+            : item.prediction === 1 ? 'Benign'
+            : item.prediction;
+          confidenceCell.textContent = item.confidence !== undefined ? item.confidence + '%' : '';
+          row.appendChild(urlCell);
+          row.appendChild(predictionCell);
+          row.appendChild(confidenceCell);
+          resultsTableBody.appendChild(row);
+        }
+        // Ellipsis row (vertical ellipsis)
+        const ellipsisRow = document.createElement('tr');
+        const ellipsisCell = document.createElement('td');
+        ellipsisCell.colSpan = 3;
+        ellipsisCell.style.textAlign = 'center';
+        ellipsisCell.style.fontSize = '24px';
+        ellipsisCell.textContent = '⋮';
+        ellipsisRow.appendChild(ellipsisCell);
+        resultsTableBody.appendChild(ellipsisRow);
+        // Last entry.
+        const lastItem = data[data.length - 1];
+        const lastRow = document.createElement('tr');
+        const lastUrlCell = document.createElement('td');
+        const lastPredictionCell = document.createElement('td');
+        const lastConfidenceCell = document.createElement('td');
+        lastUrlCell.textContent = lastItem.url;
+        lastPredictionCell.textContent = lastItem.prediction === 0 ? 'Phishing'
+          : lastItem.prediction === 1 ? 'Benign'
+          : lastItem.prediction;
+        lastConfidenceCell.textContent = lastItem.confidence !== undefined ? lastItem.confidence + '%' : '';
+        lastRow.appendChild(lastUrlCell);
+        lastRow.appendChild(lastPredictionCell);
+        lastRow.appendChild(lastConfidenceCell);
+        resultsTableBody.appendChild(lastRow);
+      }
+      resultsTable.classList.remove('hidden');
+    }
+
+    // Main function: process input and get predictions.
+    displayResultsBtn.addEventListener('click', async () => {
+      resultsData = [];
+      resultsTableBody.innerHTML = '';
+      resultsContainer.classList.add('hidden');
+      loadingSpinner.style.display = 'block';
+      const selectedInput = [...radioButtons].find(r => r.checked).value;
+      if (selectedInput === 'url') {
+        let singleUrl = urlInput.value.trim();
+        if (!singleUrl) {
+          alert('Please enter a URL.');
+          loadingSpinner.style.display = 'none';
+          return;
+        }
+        singleUrl = addWWWIfMissing(singleUrl);
+        if (!isValidUrl(singleUrl)) {
+          alert('Invalid URL format. Please enter a URL in the format: https://www.example.com');
+          loadingSpinner.style.display = 'none';
+          return;
+        }
+        const response = await getPredictionForUrl(singleUrl);
+        if (response !== null) {
+          resultsData.push({ url: singleUrl, prediction: response.prediction, confidence: response.confidence });
+        }
+      } else {
+        const file = csvFile.files[0];
+        if (!file) {
+          alert('Please select a CSV or text file.');
+          loadingSpinner.style.display = 'none';
+          return;
+        }
+        const urls = await parseCsvFile(file);
+        for (let i = 0; i < urls.length; i++) {
+          let url = urls[i].trim();
+          if (url) {
+            url = addWWWIfMissing(url);
+            if (!isValidUrl(url)) {
+              resultsData.push({ url, prediction: "Invalid", confidence: "" });
+              continue;
+            }
+            const response = await getPredictionForUrl(url);
+            if (response !== null) {
+              resultsData.push({ url, prediction: response.prediction, confidence: response.confidence });
+            }
+          }
+        }
+      }
+      loadingSpinner.style.display = 'none';
+      displayResultsInTable(resultsData);
+      resultsContainer.classList.remove('hidden');
+      resultsContainer.scrollIntoView({ behavior: 'smooth' });
+    });
+
+    downloadCsvBtn.addEventListener('click', () => {
+      if (resultsData.length === 0) {
+        alert('No results to download. Please run a prediction first.');
+        return;
+      }
+      downloadResultsAsCsv(resultsData);
+    });
+
+    // Helper function to call /predict endpoint.
+    async function getPredictionForUrl(url) {
+      try {
+        const response = await fetch('/predict', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ input_data: url })
+        });
+        if (!response.ok) {
+          console.error('Error in /predict response:', response.statusText);
+          return null;
+        }
+        const data = await response.json();
+        if (data.error) {
+          console.error('Error from backend:', data.error);
+          return null;
+        }
+        return data;
+      } catch (error) {
+        console.error('Error calling /predict:', error);
+        return null;
+      }
+    }
+
+    // Helper function to parse CSV/Text file.
+    async function parseCsvFile(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const text = e.target.result;
+          const lines = text.split(/\r?\n/);
+          resolve(lines);
+        };
+        reader.onerror = (error) => reject(error);
+        reader.readAsText(file);
+      });
+    }
+
+    // Download results as CSV.
+    function downloadResultsAsCsv(data) {
+      let csvContent = 'data:text/csv;charset=utf-8,URL,Prediction,Confidence (%)\n';
+      data.forEach(item => {
+        const predictionText =
+          item.prediction === 0 ? 'Phishing'
+          : item.prediction === 1 ? 'Benign'
+          : item.prediction;
+        csvContent += `${item.url},${predictionText},${item.confidence !== undefined ? item.confidence : ""}\n`;
+      });
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', 'prediction_results.csv');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  </script>
 </body>
 </html>
