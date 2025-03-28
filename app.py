@@ -2,16 +2,8 @@ from flask import Flask, request, jsonify, render_template
 import torch
 import torch.nn as nn
 import numpy as np
-import joblib  # Optional if you want to use scaler.pkl
 from feature_extraction import extract_features
-
-# Load normalization parameters
-feature_mean = np.load("feature_mean.npy")
-feature_std = np.load("feature_std.npy")
-
-def normalize_features(features):
-    """Normalize input features using saved mean and std values."""
-    return (features - feature_mean) / feature_std
+from normalize import normalize_features
 
 # Load saved autoencoder model for feature compression
 class Autoencoder(nn.Module):
@@ -122,13 +114,19 @@ def predict():
         # Get prediction from classifier
         with torch.no_grad():
             output = classifier(compressed_features)
-        print("Raw model output:", output.item())
+        raw_output = output.item()
+        print("Raw model output:", raw_output)
 
-        # Convert output to binary prediction
-        prediction = 1 if output.item() > 0.5 else 0
-        print("Final prediction:", prediction)
+        # Calculate prediction and confidence based on raw_output:
+        if raw_output > 0.5:
+            prediction = 1
+            confidence = round(raw_output * 100, 2)
+        else:
+            prediction = 0
+            confidence = round((1 - raw_output) * 100, 2)
+        print("Final prediction:", prediction, "with confidence:", confidence)
 
-        return jsonify({"prediction": prediction})
+        return jsonify({"prediction": prediction, "confidence": confidence})
     
     except Exception as e:
         print("Error during prediction:", str(e))
