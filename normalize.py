@@ -1,8 +1,7 @@
 import numpy as np
-# Load normalization parameters
-feature_mean = np.load("feature_mean.npy")
-feature_std = np.load("feature_std.npy")
+
+feature_min = np.load("feature_min.npy")
+feature_scale = np.load("feature_scale.npy")
 
 def normalize_features(features):
-    """Normalize input features using saved mean and std values."""
-    return (features - feature_mean) / feature_std
+    return (features - feature_min) / feature_scale
